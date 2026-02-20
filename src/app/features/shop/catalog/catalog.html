@@ -1,0 +1,107 @@
+<!-- Page Header -->
+<section class="bg-white py-12 md:py-16">
+  <div class="max-w-7xl mx-auto px-4 md:px-8">
+    <div class="text-center mb-12">
+      <h1 class="text-4xl md:text-5xl font-bold text-slate-800 mb-4">
+        Our Signature Bouquets
+      </h1>
+      <p class="text-lg text-slate-600 max-w-2xl mx-auto">
+        Handcrafted arrangements for every moment. Thoughtfully designed with premium flowers
+        and sustainable materials.
+      </p>
+    </div>
+
+    <!-- Category Filter Bar -->
+    <div class="flex flex-wrap justify-center gap-3 mb-8">
+      @for (category of categories; track category) {
+        <button
+          (click)="selectCategory(category)"
+          [class.bg-rose-500]="selectedCategory() === category"
+          [class.text-white]="selectedCategory() === category"
+          [class.bg-white]="selectedCategory() !== category"
+          [class.text-slate-700]="selectedCategory() !== category"
+          [class.border-rose-400]="selectedCategory() !== category"
+          [class.border-2]="selectedCategory() !== category"
+          [class.border-transparent]="selectedCategory() === category"
+          class="px-5 py-2 rounded-full font-medium text-sm transition-all duration-300 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-rose-400 focus:ring-offset-2"
+          [attr.aria-pressed]="selectedCategory() === category"
+        >
+          {{ category }}
+        </button>
+      }
+    </div>
+  </div>
+</section>
+
+<!-- Product Grid Section -->
+<section class="bg-white py-12 md:py-16">
+  <div class="max-w-7xl mx-auto px-4 md:px-8">
+    @if (filteredProducts().length > 0) {
+      <div
+        class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 md:gap-8"
+      >
+        @for (product of filteredProducts(); track product.id) {
+          <div class="flex flex-col group cursor-pointer">
+            <!-- Product Image Card -->
+            <div
+              class="relative overflow-hidden bg-slate-100 rounded-lg aspect-square mb-4 transition-all duration-500"
+            >
+              <img
+                [src]="product.imageUrl"
+                [alt]="product.name"
+                loading="lazy"
+                class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+              />
+
+              <!-- Mobile: Add to Cart Button (visible always on mobile) -->
+              <button
+                (click)="addToCart(product)"
+                class="absolute inset-0 flex items-center justify-center bg-black bg-opacity-0 hover:bg-opacity-40 transition-all duration-300 md:hidden"
+                [attr.aria-label]="'Add ' + product.name + ' to cart'"
+              >
+                <span
+                  class="px-4 py-2 bg-rose-500 text-white font-medium rounded-lg opacity-0 group-active:opacity-100 transition-opacity duration-300"
+                >
+                  Add to Cart
+                </span>
+              </button>
+
+              <!-- Desktop: Add to Cart Button (hidden until hover) -->
+              <button
+                (click)="addToCart(product)"
+                class="hidden md:absolute md:bottom-4 md:left-4 md:right-4 md:flex items-center justify-center px-4 py-2 bg-rose-500 text-white font-medium rounded-lg opacity-0 group-hover:opacity-100 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-rose-400 focus:ring-offset-2 hover:bg-rose-600 active:scale-95"
+                [attr.aria-label]="'Add ' + product.name + ' to cart'"
+              >
+                Add to Cart
+              </button>
+            </div>
+
+            <!-- Product Info -->
+            <div class="flex-1 flex flex-col">
+              <h3 class="text-lg font-semibold text-slate-800 mb-1 group-hover:text-rose-500 transition-colors duration-300">
+                {{ product.name }}
+              </h3>
+              @if (product.description) {
+                <p class="text-sm text-slate-600 mb-3">
+                  {{ product.description }}
+                </p>
+              }
+
+              <!-- Price -->
+              <p class="text-xl font-bold text-rose-500 mt-auto">
+                ${{ product.price }}
+              </p>
+            </div>
+          </div>
+        }
+      </div>
+    } @else {
+      <!-- Empty State -->
+      <div class="text-center py-12">
+        <p class="text-lg text-slate-600">
+          No arrangements found in this category. Please try another.
+        </p>
+      </div>
+    }
+  </div>
+</section>
