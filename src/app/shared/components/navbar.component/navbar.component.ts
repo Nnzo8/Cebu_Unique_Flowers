@@ -1,6 +1,7 @@
 import { Component, ChangeDetectionStrategy, signal, computed, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink, RouterLinkActive } from '@angular/router';
+import { RouterLink, RouterLinkActive, Router } from '@angular/router';
+import { AuthService } from '../../../core/services/auth.service';
 
 interface NavLink {
   label: string;
@@ -21,6 +22,10 @@ interface NavLink {
   },
 })
 export class NavbarComponent {
+  // Inject AuthService and Router
+  private authService = inject(AuthService);
+  private router = inject(Router);
+
   // State
   readonly isMenuOpen = signal(false);
   readonly isScrolling = signal(false);
@@ -36,6 +41,9 @@ export class NavbarComponent {
   // Computed state for derived UI logic
   readonly menuIcon = computed(() => (this.isMenuOpen() ? '✕' : '☰'));
   readonly cartItemCount = computed(() => 0); // Placeholder - will be replaced by cart service signal
+  readonly isLoggedIn = computed(() => this.authService.isLoggedIn());
+  readonly isAuthPage = computed(() => this.router.url.includes('/auth'));
+  readonly shouldShowAuthButtons = computed(() => !this.isAuthPage());
 
   constructor() {
     this.setupScrollListener();
@@ -55,9 +63,12 @@ export class NavbarComponent {
     this.isMenuOpen.set(false);
   }
 
-  isLoggedIn(): boolean {
-    // Placeholder for authentication logic
-    return false;
+  /**
+   * Handle user logout by calling the auth service.
+   */
+  logout(): void {
+    this.authService.logout();
+    this.isMenuOpen.set(false);
   }
   
   /**
