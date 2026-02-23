@@ -43,6 +43,8 @@ export class NavbarComponent {
   readonly cartItemCount = computed(() => 0); // Placeholder - will be replaced by cart service signal
   readonly isLoggedIn = computed(() => this.authService.isLoggedIn());
   readonly isAuthPage = computed(() => this.router.url.includes('/auth'));
+  readonly isAdminPage = computed(() => this.router.url.includes('/admin'));
+  readonly shouldShowNavbar = computed(() => !this.isAuthPage() && !this.isAdminPage());
   readonly shouldShowAuthButtons = computed(() => !this.isAuthPage());
 
   constructor() {

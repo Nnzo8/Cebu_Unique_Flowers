@@ -8,6 +8,13 @@
 
     <!-- Login Form -->
     <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="space-y-6">
+      <!-- Error Message Alert -->
+      @if (errorMessage()) {
+        <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+          <p class="text-red-600 text-sm font-medium">{{ errorMessage() }}</p>
+        </div>
+      }
+
       <!-- Email Field -->
       <div>
         <label for="email" class="block text-sm font-medium text-slate-800 mb-2">
@@ -49,9 +56,14 @@
       <!-- Submit Button -->
       <button
         type="submit"
-        class="w-full bg-pink-500 hover:bg-pink-600 text-white font-semibold py-2 px-4 rounded-lg transition duration-200"
+        [disabled]="isLoading()"
+        class="w-full bg-pink-500 hover:bg-pink-600 disabled:bg-pink-400 disabled:cursor-not-allowed text-white font-semibold py-2 px-4 rounded-lg transition duration-200"
       >
-        Sign In
+        @if (isLoading()) {
+          <span>Signing in...</span>
+        } @else {
+          <span>Sign In</span>
+        }
       </button>
     </form>
 
