@@ -1,65 +1,49 @@
 <app-navbar></app-navbar>
 
-<!-- Page Header -->
-<section class="bg-white py-12 md:py-16 mt-8 md:mt-12">
-  <div class="max-w-7xl mx-auto px-4 md:px-8">
-    <div class="text-center mb-12">
-      <h1 class="text-4xl md:text-5xl font-bold text-slate-800 mb-4">
-        Our Signature Bouquets
-      </h1>
-      <p class="text-lg text-slate-600 max-w-2xl mx-auto">
-        Handcrafted arrangements for every moment. Thoughtfully designed with premium flowers
-        and sustainable materials.
-      </p>
+@if (showToast()) {
+  <div class="fixed bottom-6 right-6 z-50 animate-fade-in-up">
+    <div class="bg-slate-800 text-white px-6 py-4 rounded-xl shadow-2xl flex items-center gap-3 border border-slate-700">
+      <div class="bg-green-500/20 text-green-400 p-1 rounded-full">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+        </svg>
+      </div>
+      <div>
+        <p class="font-medium">Added to Cart!</p>
+        <p class="text-xs text-slate-300">Your arrangement has been added.</p>
+      </div>
     </div>
+  </div>
+}
 
-    <!-- Category Filter Bar -->
-    <div class="flex flex-wrap justify-center gap-3 mb-8">
-      @for (category of categories; track category) {
-        <button
-          (click)="selectCategory(category)"
-          [class.bg-rose-500]="selectedCategory() === category"
-          [class.text-white]="selectedCategory() === category"
-          [class.bg-white]="selectedCategory() !== category"
-          [class.text-slate-700]="selectedCategory() !== category"
-          [class.border-rose-400]="selectedCategory() !== category"
-          [class.border-2]="selectedCategory() !== category"
-          [class.border-transparent]="selectedCategory() === category"
-          class="px-5 py-2 rounded-full font-medium text-sm transition-all duration-300 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-rose-400 focus:ring-offset-2"
-          [attr.aria-pressed]="selectedCategory() === category"
-        >
-          {{ category }}
-        </button>
-      }
-    </div>
+<section class="bg-white py-12 md:py-16 mt-8 md:mt-12">
+  <div class="max-w-7xl mx-auto px-4 md:px-8 text-center">
+    <h1 class="text-4xl md:text-5xl font-bold text-slate-800 mb-4">
+      Our Signature Bouquets
+    </h1>
+    <p class="text-lg text-slate-600 max-w-2xl mx-auto">
+      Handcrafted arrangements for every moment. Thoughtfully designed with premium flowers
+      and sustainable materials.
+    </p>
   </div>
 </section>
 
-<!-- Product Grid Section -->
-<section class="bg-white py-12 md:py-16">
+<section class="bg-white pb-12 md:pb-16 min-h-screen">
   <div class="max-w-7xl mx-auto px-4 md:px-8">
-    <!-- Loading State: Skeleton Loaders -->
+    
     @if (loading()) {
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 md:gap-8">
         @for (i of [1, 2, 3, 4, 5, 6, 7, 8]; track i) {
           <div class="flex flex-col">
-            <!-- Skeleton Image -->
-            <div class="w-full aspect-square bg-gradient-to-r from-slate-200 via-slate-300 to-slate-200 bg-[length:200%_100%] animate-pulse rounded-lg mb-4"></div>
-            
-            <!-- Skeleton Title -->
-            <div class="h-5 bg-gradient-to-r from-slate-200 via-slate-300 to-slate-200 bg-[length:200%_100%] animate-pulse rounded mb-2"></div>
-            
-            <!-- Skeleton Description -->
-            <div class="h-4 bg-gradient-to-r from-slate-200 via-slate-300 to-slate-200 bg-[length:200%_100%] animate-pulse rounded mb-4 w-3/4"></div>
-            
-            <!-- Skeleton Price -->
-            <div class="h-6 bg-gradient-to-r from-slate-200 via-slate-300 to-slate-200 bg-[length:200%_100%] animate-pulse rounded w-1/3 mt-auto"></div>
+            <div class="w-full aspect-square bg-slate-200 animate-pulse rounded-lg mb-4"></div>
+            <div class="h-5 bg-slate-200 animate-pulse rounded mb-2"></div>
+            <div class="h-4 bg-slate-200 animate-pulse rounded mb-4 w-3/4"></div>
+            <div class="h-6 bg-slate-200 animate-pulse rounded w-1/3 mt-auto"></div>
           </div>
         }
       </div>
     }
 
-    <!-- Error State: Alert Box -->
     @if (error()) {
       <div class="mb-8 border-l-4 border-red-500 bg-red-50 p-5 rounded-r-lg">
         <div class="flex items-start gap-4">
@@ -69,16 +53,9 @@
             </svg>
           </div>
           <div class="flex-1">
-            <h3 class="font-semibold text-red-800 mb-1">
-              Oops! Something went wrong
-            </h3>
-            <p class="text-sm text-red-700 mb-4">
-              {{ error() }}
-            </p>
-            <button
-              (click)="retryFetch()"
-              class="inline-flex px-4 py-2 bg-red-500 text-white font-medium rounded hover:bg-red-600 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-red-400 focus:ring-offset-2"
-            >
+            <h3 class="font-semibold text-red-800 mb-1">Oops! Something went wrong</h3>
+            <p class="text-sm text-red-700 mb-4">{{ error() }}</p>
+            <button (click)="retryFetch()" class="px-4 py-2 bg-red-500 text-white font-medium rounded hover:bg-red-600 transition-colors">
               Retry
             </button>
           </div>
@@ -86,295 +63,94 @@
       </div>
     }
 
-    <!-- Success State: Product Grid -->
     @if (!loading() && !error()) {
-      @if (filteredProducts().length > 0) {
-        <div
-          class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 md:gap-8"
-        >
-          @for (product of filteredProducts(); track product.id) {
-            <div class="flex flex-col group cursor-pointer">
-              <!-- Product Image Card -->
-              <div
-                class="relative overflow-hidden bg-slate-100 rounded-lg aspect-square mb-4 transition-all duration-500"
-              >
-                <img
-                  [src]="product.imageUrl"
-                  [alt]="product.name"
-                  loading="lazy"
-                  class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                />
+      
+      <div class="mb-16">
+        <div class="flex items-center justify-between mb-8">
+          <h2 class="text-2xl md:text-3xl font-bold text-slate-800">Best Sellers</h2>
+        </div>
+        
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          @for (product of bestSellers(); track product.id) {
+            <div class="flex flex-col group cursor-pointer transition-all duration-300">
+              <div class="relative overflow-hidden bg-slate-100 rounded-lg aspect-square mb-4">
+                <img [src]="product.imageUrl" [alt]="product.name" loading="lazy" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
+                
+                <div class="absolute top-3 left-3 bg-amber-400 text-amber-950 text-xs font-bold px-3 py-1 rounded-full">
+                  Popular
+                </div>
 
-                <!-- Mobile: Add to Cart Button (visible always on mobile) -->
-                <button
-                  (click)="addToCart(product)"
-                  class="absolute inset-0 flex items-center justify-center bg-black bg-opacity-0 hover:bg-opacity-40 transition-all duration-300 md:hidden"
-                  [attr.aria-label]="'Add ' + product.name + ' to cart'"
-                >
-                  <span
-                    class="px-4 py-2 bg-rose-500 text-white font-medium rounded-lg opacity-0 group-active:opacity-100 transition-opacity duration-300"
-                  >
-                    Add to Cart
-                  </span>
-                </button>
-
-                <!-- Desktop: Add to Cart Button (hidden until hover) -->
-                <button
-                  (click)="addToCart(product)"
-                  class="hidden md:absolute md:bottom-4 md:left-4 md:right-4 md:flex items-center justify-center px-4 py-2 bg-rose-500 text-white font-medium rounded-lg opacity-0 group-hover:opacity-100 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-rose-400 focus:ring-offset-2 hover:bg-rose-600 active:scale-95"
-                  [attr.aria-label]="'Add ' + product.name + ' to cart'"
-                >
+                <button (click)="addToCart(product)" class="absolute bottom-4 left-4 right-4 flex items-center justify-center px-4 py-2 bg-rose-500 text-white font-medium rounded-lg opacity-0 group-hover:opacity-100 transition-all duration-300 hover:bg-rose-600 md:translate-y-4 md:group-hover:translate-y-0" [attr.aria-label]="'Add ' + product.name + ' to cart'">
                   Add to Cart
                 </button>
               </div>
-
-              <!-- Product Info -->
-              <div class="flex-1 flex flex-col">
-                <h3 class="text-lg font-semibold text-slate-800 mb-1 group-hover:text-rose-500 transition-colors duration-300">
-                  {{ product.name }}
-                </h3>
-                @if (product.description) {
-                  <p class="text-sm text-slate-600 mb-3">
-                    {{ product.description }}
-                  </p>
-                }
-
-                <!-- Price -->
-                <p class="text-xl font-bold text-rose-500 mt-auto">
-                  ${{ product.price }}
-                </p>
+              <div class="flex-1 flex flex-col pb-2">
+                <h3 class="text-lg font-semibold text-slate-800 mb-1 group-hover:text-rose-500 transition-colors">{{ product.name }}</h3>
+                <p class="text-xl font-bold text-rose-500 mt-auto">{{ product.price | currency:'PHP' }}</p>
               </div>
-            </div>
-          }
-        </div>
-      } @else {
-        <!-- Empty State -->
-        <div class="text-center py-12">
-          <p class="text-lg text-slate-600">
-            No arrangements found in this category. Please try another.
-          </p>
-        </div>
-      }
-    }
-  </div>
-</section>
-<!-- API TESTING PANEL (Development Only) -->
-<section class="bg-slate-50 py-8 md:py-12 border-t border-slate-300">
-  <div class="max-w-7xl mx-auto px-4 md:px-8">
-    <!-- Test Panel Toggle Button -->
-    <div class="mb-6 flex items-center justify-between">
-      <h2 class="text-2xl font-bold text-slate-800">
-        🧪 API Testing Panel
-      </h2>
-      <button
-        (click)="showTestPanel.set(!showTestPanel())"
-        class="px-4 py-2 bg-slate-700 text-white font-medium rounded-lg hover:bg-slate-800 transition-colors"
-      >
-        {{ showTestPanel() ? 'Hide Tests' : 'Show Tests' }}
-      </button>
-    </div>
-
-    @if (showTestPanel()) {
-      <!-- Test Controls Grid -->
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-        <!-- TEST 1: GET by ID -->
-        <div class="bg-white p-6 rounded-lg border-2 border-blue-400 shadow-md">
-          <div class="flex items-center gap-2 mb-4">
-            <span class="text-2xl font-bold text-blue-500">GET</span>
-            <h3 class="text-lg font-semibold text-slate-800">Fetch Product by ID</h3>
-          </div>
-          
-          <div class="mb-4">
-            <label class="block text-sm font-medium text-slate-700 mb-2">Product ID</label>
-            <input
-              type="text"
-              [(ngModel)]="testGetId"
-              placeholder="e.g., 1, 2, 3"
-              class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
-            />
-          </div>
-
-          <button
-            (click)="testGetProduct()"
-            [disabled]="testGetLoading()"
-            class="w-full px-4 py-2 bg-blue-500 text-white font-medium rounded-lg hover:bg-blue-600 disabled:opacity-50 transition-colors"
-          >
-            {{ testGetLoading() ? 'Loading...' : 'Test GET' }}
-          </button>
-
-          @if (testGetResult()) {
-            <div class="mt-4 p-3 bg-green-100 border border-green-400 rounded-lg">
-              <p class="text-sm font-semibold text-green-800 mb-2">✅ Success Response:</p>
-              <pre class="text-xs overflow-auto bg-slate-100 p-2 rounded">{{ testGetResult() | json }}</pre>
-            </div>
-          }
-        </div>
-
-        <!-- TEST 2: POST (Create) -->
-        <div class="bg-white p-6 rounded-lg border-2 border-green-400 shadow-md">
-          <div class="flex items-center gap-2 mb-4">
-            <span class="text-2xl font-bold text-green-500">POST</span>
-            <h3 class="text-lg font-semibold text-slate-800">Create New Product</h3>
-          </div>
-
-          <div class="mb-3">
-            <label class="block text-sm font-medium text-slate-700 mb-1">Product Name</label>
-            <input
-              type="text"
-              [(ngModel)]="testCreateName"
-              placeholder="e.g., Test Rose"
-              class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400"
-            />
-          </div>
-
-          <div class="mb-3">
-            <label class="block text-sm font-medium text-slate-700 mb-1">Price</label>
-            <input
-              type="number"
-              [(ngModel)]="testCreatePrice"
-              placeholder="99"
-              class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400"
-            />
-          </div>
-
-          <div class="mb-4">
-            <label class="block text-sm font-medium text-slate-700 mb-1">Category</label>
-            <select
-              [(ngModel)]="testCreateCategory"
-              class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400"
-            >
-              <option>Anniversary</option>
-              <option>Birthdays</option>
-              <option>Sympathy</option>
-              <option>Weddings</option>
-            </select>
-          </div>
-
-          <button
-            (click)="testCreateProduct()"
-            [disabled]="testCreateLoading()"
-            class="w-full px-4 py-2 bg-green-500 text-white font-medium rounded-lg hover:bg-green-600 disabled:opacity-50 transition-colors"
-          >
-            {{ testCreateLoading() ? 'Creating...' : 'Test POST' }}
-          </button>
-
-          @if (testCreateResult()) {
-            <div class="mt-4 p-3 bg-green-100 border border-green-400 rounded-lg">
-              <p class="text-sm font-semibold text-green-800 mb-2">✅ Created Product:</p>
-              <pre class="text-xs overflow-auto bg-slate-100 p-2 rounded">{{ testCreateResult() | json }}</pre>
-            </div>
-          }
-        </div>
-
-        <!-- TEST 3: PUT (Update) -->
-        <div class="bg-white p-6 rounded-lg border-2 border-yellow-400 shadow-md">
-          <div class="flex items-center gap-2 mb-4">
-            <span class="text-2xl font-bold text-yellow-500">PUT</span>
-            <h3 class="text-lg font-semibold text-slate-800">Update Product</h3>
-          </div>
-
-          <div class="mb-3">
-            <label class="block text-sm font-medium text-slate-700 mb-1">Product ID to Update</label>
-            <input
-              type="text"
-              [(ngModel)]="testUpdateId"
-              placeholder="e.g., 1, 2, 3"
-              class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400"
-            />
-          </div>
-
-          <div class="mb-3">
-            <label class="block text-sm font-medium text-slate-700 mb-1">New Name</label>
-            <input
-              type="text"
-              [(ngModel)]="testUpdateName"
-              placeholder="Updated Rose"
-              class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400"
-            />
-          </div>
-
-          <div class="mb-4">
-            <label class="block text-sm font-medium text-slate-700 mb-1">New Price</label>
-            <input
-              type="number"
-              [(ngModel)]="testUpdatePrice"
-              placeholder="150"
-              class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400"
-            />
-          </div>
-
-          <button
-            (click)="testUpdateProduct()"
-            [disabled]="testUpdateLoading()"
-            class="w-full px-4 py-2 bg-yellow-500 text-white font-medium rounded-lg hover:bg-yellow-600 disabled:opacity-50 transition-colors"
-          >
-            {{ testUpdateLoading() ? 'Updating...' : 'Test PUT' }}
-          </button>
-
-          @if (testUpdateResult()) {
-            <div class="mt-4 p-3 bg-yellow-100 border border-yellow-400 rounded-lg">
-              <p class="text-sm font-semibold text-yellow-800 mb-2">✅ Updated Product:</p>
-              <pre class="text-xs overflow-auto bg-slate-100 p-2 rounded">{{ testUpdateResult() | json }}</pre>
-            </div>
-          }
-        </div>
-
-        <!-- TEST 4: DELETE -->
-        <div class="bg-white p-6 rounded-lg border-2 border-red-400 shadow-md">
-          <div class="flex items-center gap-2 mb-4">
-            <span class="text-2xl font-bold text-red-500">DELETE</span>
-            <h3 class="text-lg font-semibold text-slate-800">Delete Product</h3>
-          </div>
-
-          <div class="mb-4">
-            <label class="block text-sm font-medium text-slate-700 mb-2">Product ID to Delete</label>
-            <input
-              type="text"
-              [(ngModel)]="testDeleteId"
-              placeholder="e.g., 1, 2, 3"
-              class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-400"
-            />
-          </div>
-
-          <button
-            (click)="testDeleteProduct()"
-            [disabled]="testDeleteLoading()"
-            class="w-full px-4 py-2 bg-red-500 text-white font-medium rounded-lg hover:bg-red-600 disabled:opacity-50 transition-colors"
-          >
-            {{ testDeleteLoading() ? 'Deleting...' : 'Test DELETE' }}
-          </button>
-
-          @if (testDeleteMessage()) {
-            <div
-              [class.bg-green-100]="testDeleteMessage().includes('Successfully')"
-              [class.border-green-400]="testDeleteMessage().includes('Successfully')"
-              [class.bg-red-100]="!testDeleteMessage().includes('Successfully')"
-              [class.border-red-400]="!testDeleteMessage().includes('Successfully')"
-              class="mt-4 p-3 border rounded-lg"
-            >
-              <p
-                [class.text-green-800]="testDeleteMessage().includes('Successfully')"
-                [class.text-red-800]="!testDeleteMessage().includes('Successfully')"
-                class="text-sm font-semibold"
-              >
-                {{ testDeleteMessage() }}
-              </p>
             </div>
           }
         </div>
       </div>
 
-      <!-- API Test Guide -->
-      <div class="mt-8 bg-blue-50 border-l-4 border-blue-500 p-6 rounded-lg">
-        <h4 class="font-bold text-blue-900 mb-3">📚 How to Use This Testing Panel:</h4>
-        <ul class="text-sm text-blue-800 space-y-2">
-          <li><strong>GET:</strong> Fetch a product by ID. Open browser console (F12) to see the full response.</li>
-          <li><strong>POST:</strong> Create a new product. The API may reject this if you don't have an admin token.</li>
-          <li><strong>PUT:</strong> Update an existing product. Requires a valid product ID and admin token.</li>
-          <li><strong>DELETE:</strong> Delete a product. Requires a valid product ID and admin token.</li>
-          <li><strong>Admin Token:</strong> POST, PUT, DELETE will automatically use any token from localStorage via the auth interceptor.</li>
-          <li><strong>Check Console:</strong> Press F12 → Console tab to see detailed request/response logs.</li>
-        </ul>
+      <hr class="border-slate-200 mb-12">
+
+      <div>
+        <h2 class="text-2xl md:text-3xl font-bold text-slate-800 mb-6 text-center">More Products</h2>
+        
+        <div class="flex flex-wrap justify-center gap-3 mb-10">
+          @for (category of categories; track category) {
+            <button
+              (click)="selectCategory(category)"
+              [class.bg-rose-500]="selectedCategory() === category"
+              [class.text-white]="selectedCategory() === category"
+              [class.bg-white]="selectedCategory() !== category"
+              [class.text-slate-700]="selectedCategory() !== category"
+              [class.border-rose-400]="selectedCategory() !== category"
+              [class.border-2]="selectedCategory() !== category"
+              [class.border-transparent]="selectedCategory() === category"
+              class="px-5 py-2 rounded-full font-medium text-sm transition-all duration-300 hover:shadow-md focus:outline-none"
+              [attr.aria-pressed]="selectedCategory() === category"
+            >
+              {{ category }}
+            </button>
+          }
+        </div>
+
+        @if (filteredProducts().length > 0) {
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 md:gap-8">
+            @for (product of filteredProducts(); track product.id) {
+              <div class="flex flex-col group cursor-pointer transition-all duration-300">
+                <div class="relative overflow-hidden bg-slate-100 rounded-lg aspect-square mb-4">
+                  <img [src]="product.imageUrl" [alt]="product.name" loading="lazy" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
+
+                  <button (click)="addToCart(product)" class="absolute inset-0 flex items-center justify-center bg-black bg-opacity-0 hover:bg-opacity-40 transition-all duration-300 md:hidden" [attr.aria-label]="'Add ' + product.name + ' to cart'">
+                    <span class="px-4 py-2 bg-rose-500 text-white font-medium rounded-lg opacity-0 group-active:opacity-100 transition-opacity">Add to Cart</span>
+                  </button>
+
+                  <button (click)="addToCart(product)" class="hidden md:absolute md:bottom-4 md:left-4 md:right-4 md:flex items-center justify-center px-4 py-2 bg-rose-500 text-white font-medium rounded-lg opacity-0 group-hover:opacity-100 transition-all duration-300 md:translate-y-4 md:group-hover:translate-y-0 hover:bg-rose-600">
+                    Add to Cart
+                  </button>
+                </div>
+                <div class="flex-1 flex flex-col pb-2">
+                  <h3 class="text-lg font-semibold text-slate-800 mb-1 group-hover:text-rose-500 transition-colors">{{ product.name }}</h3>
+                  @if (product.description) {
+                    <p class="text-sm text-slate-600 mb-3 line-clamp-2">{{ product.description }}</p>
+                  }
+                  <p class="text-xl font-bold text-rose-500 mt-auto">{{ product.price | currency:'PHP' }}</p>
+                </div>
+              </div>
+            }
+          </div>
+        } @else {
+          <div class="text-center py-16 bg-white rounded-2xl border border-dashed border-slate-300">
+            <div class="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg class="w-8 h-8 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            </div>
+            <p class="text-lg text-slate-600 font-medium">No arrangements found in this category.</p>
+            <button (click)="selectCategory('All')" class="mt-4 text-rose-500 hover:text-rose-600 font-medium hover:underline">View all arrangements</button>
+          </div>
+        }
       </div>
     }
   </div>

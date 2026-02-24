@@ -22,27 +22,82 @@ export interface User {
   };
 }
 
+export interface Order {
+  id: string;
+  user_email: string;
+  customer_name: string;
+  customer_email?: string;
+  customer_phone?: string;
+  delivery_address?: string;
+  landmark?: string;
+  order_date: string | Date;
+  total_price: number;
+  status: 'Pending' | 'Making' | 'Ready' | 'Delivered';
+  items?: OrderItem[];
+  payment_method?: string;
+  created_at?: string | Date;
+  updated_at?: string | Date;
+}
+
+export interface OrderItem {
+  product_id: string;
+  product_name: string;
+  price: number;
+  quantity: number;
+}
+
 @Injectable({
   providedIn: 'root',
 })
 export class SupabaseService {
-  private supabase: SupabaseClient;
+  public supabase: SupabaseClient;
   private session$ = new BehaviorSubject<Session | null>(null);
   
   // Table names
   private readonly PRODUCTS_TABLE = 'products';
   private readonly USERS_TABLE = 'users';
+  private readonly ORDERS_TABLE = 'orders';
+  private readonly USER_CARTS_TABLE = 'user_carts';
 
   constructor() {
     this.supabase = createClient(
       environment.supabase.url,
       environment.supabase.anonKey
     );
-    this.initializeSession();
   }
 
   /**
-   * Initialize session on service creation
+   * Initialize session on app startup (called by APP_INITIALIZER)
+   * This ensures the session is restored from Supabase before the app renders
+   */
+  async initSupabaseSession(): Promise<void> {
+    try {
+      console.log('[SupabaseService] Initializing Supabase session...');
+      
+      // Restore session from Supabase (checks localStorage and validates token)
+      const { data, error } = await this.supabase.auth.getSession();
+      
+      if (error) {
+        console.error('[SupabaseService] Error getting session:', error);
+        this.session$.next(null);
+      } else {
+        console.log('[SupabaseService] Session restored:', data.session ? 'Active' : 'None');
+        this.session$.next(data.session);
+      }
+
+      // Listen for auth state changes moving forward
+      this.supabase.auth.onAuthStateChange((_, session) => {
+        console.log('[SupabaseService] Auth state changed:', session ? 'Logged in' : 'Logged out');
+        this.session$.next(session);
+      });
+    } catch (error) {
+      console.error('[SupabaseService] Exception initializing session:', error);
+      this.session$.next(null);
+    }
+  }
+
+  /**
+   * Initialize session on service creation (deprecated - use initSupabaseSession via APP_INITIALIZER)
    */
   private async initializeSession(): Promise<void> {
     const { data } = await this.supabase.auth.getSession();
@@ -66,6 +121,49 @@ export class SupabaseService {
    */
   getSessionSync(): Session | null {
     return this.session$.getValue();
+  }
+
+  /**
+   * Create a user record in the users table after successful auth signup
+   * This stores the user's full name and role in the database
+   * @param userId The authenticated user ID from Supabase Auth
+   * @param email User's email
+   * @param fullName User's full name
+   * @param role User's role ('admin' or 'user')
+   */
+  async createUserRecord(
+    userId: string,
+    email: string,
+    fullName: string,
+    role: 'admin' | 'user' = 'user'
+  ): Promise<{ data: any; error: any }> {
+    try {
+      console.log('[SupabaseService] Creating user record for:', userId, email);
+
+      const { data, error } = await this.supabase
+        .from(this.USERS_TABLE)
+        .insert([
+          {
+            id: userId,
+            email: email,
+            full_name: fullName,
+            role: role,
+            created_at: new Date().toISOString(),
+          },
+        ])
+        .select();
+
+      if (error) {
+        console.error('[SupabaseService] Error creating user record:', error);
+        return { data: null, error };
+      }
+
+      console.log('[SupabaseService] User record created successfully:', data);
+      return { data, error: null };
+    } catch (error) {
+      console.error('[SupabaseService] Exception creating user record:', error);
+      return { data: null, error };
+    }
   }
 
   /**
@@ -191,9 +289,9 @@ export class SupabaseService {
     try {
       const { data, error } = await this.supabase
         .from(this.PRODUCTS_TABLE)
-        .select('*')
-        .order('created_at', { ascending: false });
-
+        .select('*');
+      
+        
       if (error) {
         console.error('Fetch products error:', error);
         return { data: null, error };
@@ -322,5 +420,301 @@ export class SupabaseService {
     return () => {
       this.supabase.removeChannel(channel);
     };
+  }
+
+  /**
+   * Fetch all orders for a specific user (both active and past)
+   */
+  async getUserOrders(userEmail: string): Promise<{ data: Order[] | null; error: any }> {
+    try {
+      const { data, error } = await this.supabase
+        .from(this.ORDERS_TABLE)
+        .select('*')
+        .eq('user_email', userEmail)
+        .order('order_date', { ascending: false });
+
+      if (error) {
+        console.error('Fetch user orders error:', error);
+        return { data: null, error };
+      }
+
+      return { data: (data as Order[]) || [], error: null };
+    } catch (error) {
+      console.error('Fetch user orders exception:', error);
+      return { data: null, error };
+    }
+  }
+
+  /**
+   * Fetch active orders for a specific user (Pending, Making, Ready)
+   */
+  async getUserActiveOrders(userEmail: string): Promise<{ data: Order[] | null; error: any }> {
+    try {
+      const { data, error } = await this.supabase
+        .from(this.ORDERS_TABLE)
+        .select('*')
+        .eq('customer_email', userEmail)
+        .in('status', ['Pending', 'Making', 'Ready'])
+        .order('order_date', { ascending: false });
+
+      if (error) {
+        console.error('Fetch active orders error:', error);
+        return { data: null, error };
+      }
+
+      return { data: (data as Order[]) || [], error: null };
+    } catch (error) {
+      console.error('Fetch active orders exception:', error);
+      return { data: null, error };
+    }
+  }
+
+  /**
+   * Fetch past orders for a specific user (Delivered)
+   */
+  async getUserPastOrders(userEmail: string): Promise<{ data: Order[] | null; error: any }> {
+    try {
+      const { data, error } = await this.supabase
+        .from(this.ORDERS_TABLE)
+        .select('*')
+        .eq('customer_email', userEmail)
+        .eq('status', 'Delivered')
+        .order('order_date', { ascending: false });
+
+      if (error) {
+        console.error('Fetch past orders error:', error);
+        return { data: null, error };
+      }
+
+      return { data: (data as Order[]) || [], error: null };
+    } catch (error) {
+      console.error('Fetch past orders exception:', error);
+      return { data: null, error };
+    }
+  }
+
+  /**
+   * Insert a new order into the database
+   */
+  async insertOrder(order: Omit<Order, 'id' | 'created_at' | 'updated_at'>): Promise<{ data: Order | null; error: any }> {
+    try {
+      console.log('[SupabaseService] Inserting order:', order);
+      
+      const { data, error } = await this.supabase
+        .from(this.ORDERS_TABLE)
+        .insert([order])
+        .select()
+        .single();
+
+      if (error) {
+        console.error('[SupabaseService] Insert order error:', error);
+        return { data: null, error };
+      }
+
+      console.log('[SupabaseService] Order inserted successfully:', data);
+      return { data: data as Order, error: null };
+    } catch (error) {
+      console.error('[SupabaseService] Insert order exception:', error);
+      return { data: null, error };
+    }
+  }
+
+  /**
+   * Fetch all orders (Admin only)
+   */
+  async getAllOrders(): Promise<{ data: Order[] | null; error: any }> {
+    try {
+      const { data, error } = await this.supabase
+        .from(this.ORDERS_TABLE)
+        .select('*')
+        .order('order_date', { ascending: false });
+
+      if (error) {
+        console.error('[SupabaseService] Fetch all orders error:', error);
+        return { data: null, error };
+      }
+
+      return { data: (data as Order[]) || [], error: null };
+    } catch (error) {
+      console.error('[SupabaseService] Fetch all orders exception:', error);
+      return { data: null, error };
+    }
+  }
+
+  /**
+   * Add or update item in user's cart
+   */
+  async addItemToCart(
+    userEmail: string,
+    productId: string,
+    productName: string,
+    price: number,
+    imageUrl: string,
+    quantity: number = 1
+  ): Promise<{ data: any; error: any }> {
+    try {
+      // Check if item already exists in cart
+      const { data: existingItem, error: selectError } = await this.supabase
+        .from(this.USER_CARTS_TABLE)
+        .select('*')
+        .eq('user_email', userEmail)
+        .eq('product_id', productId)
+        .single();
+
+      if (selectError && selectError.code !== 'PGRST116') {
+        // PGRST116 = no rows returned (not found)
+        console.error('[SupabaseService] Error checking cart item:', selectError);
+        return { data: null, error: selectError };
+      }
+
+      if (existingItem) {
+        // Update existing item quantity
+        const { data, error } = await this.supabase
+          .from(this.USER_CARTS_TABLE)
+          .update({ quantity: existingItem.quantity + quantity })
+          .eq('user_email', userEmail)
+          .eq('product_id', productId)
+          .select()
+          .single();
+
+        if (error) {
+          console.error('[SupabaseService] Error updating cart item:', error);
+          return { data: null, error };
+        }
+
+        console.log('[SupabaseService] Cart item updated:', data);
+        return { data, error: null };
+      } else {
+        // Insert new cart item
+        const { data, error } = await this.supabase
+          .from(this.USER_CARTS_TABLE)
+          .insert([
+            {
+              user_email: userEmail,
+              product_id: productId,
+              product_name: productName,
+              price,
+              image_url: imageUrl,
+              quantity,
+            },
+          ])
+          .select()
+          .single();
+
+        if (error) {
+          console.error('[SupabaseService] Error adding cart item:', error);
+          return { data: null, error };
+        }
+
+        console.log('[SupabaseService] Cart item added:', data);
+        return { data, error: null };
+      }
+    } catch (error) {
+      console.error('[SupabaseService] Exception adding item to cart:', error);
+      return { data: null, error };
+    }
+  }
+
+  /**
+   * Get cart items for a specific user
+   */
+  async getCartItems(userEmail: string): Promise<{ data: any[] | null; error: any }> {
+    try {
+      const { data, error } = await this.supabase
+        .from(this.USER_CARTS_TABLE)
+        .select('*')
+        .eq('user_email', userEmail)
+        .order('created_at', { ascending: true });
+
+      if (error) {
+        console.error('[SupabaseService] Error fetching cart items:', error);
+        return { data: null, error };
+      }
+
+      console.log('[SupabaseService] Cart items fetched for', userEmail, ':', data?.length || 0, 'items');
+      return { data: data || [], error: null };
+    } catch (error) {
+      console.error('[SupabaseService] Exception fetching cart items:', error);
+      return { data: null, error };
+    }
+  }
+
+  /**
+   * Update cart item quantity
+   */
+  async updateCartItemQuantity(userEmail: string, productId: string, quantity: number): Promise<{ data: any; error: any }> {
+    try {
+      if (quantity <= 0) {
+        // Remove item if quantity is 0 or less
+        return this.removeCartItem(userEmail, productId);
+      }
+
+      const { data, error } = await this.supabase
+        .from(this.USER_CARTS_TABLE)
+        .update({ quantity })
+        .eq('user_email', userEmail)
+        .eq('product_id', productId)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('[SupabaseService] Error updating cart item quantity:', error);
+        return { data: null, error };
+      }
+
+      console.log('[SupabaseService] Cart item quantity updated:', data);
+      return { data, error: null };
+    } catch (error) {
+      console.error('[SupabaseService] Exception updating cart item quantity:', error);
+      return { data: null, error };
+    }
+  }
+
+  /**
+   * Remove item from cart
+   */
+  async removeCartItem(userEmail: string, productId: string): Promise<{ data: any; error: any }> {
+    try {
+      const { data, error } = await this.supabase
+        .from(this.USER_CARTS_TABLE)
+        .delete()
+        .eq('user_email', userEmail)
+        .eq('product_id', productId)
+        .select();
+
+      if (error) {
+        console.error('[SupabaseService] Error removing cart item:', error);
+        return { data: null, error };
+      }
+
+      console.log('[SupabaseService] Cart item removed');
+      return { data, error: null };
+    } catch (error) {
+      console.error('[SupabaseService] Exception removing cart item:', error);
+      return { data: null, error };
+    }
+  }
+
+  /**
+   * Clear entire cart for a user
+   */
+  async clearUserCart(userEmail: string): Promise<{ error: any }> {
+    try {
+      const { error } = await this.supabase
+        .from(this.USER_CARTS_TABLE)
+        .delete()
+        .eq('user_email', userEmail);
+
+      if (error) {
+        console.error('[SupabaseService] Error clearing cart:', error);
+        return { error };
+      }
+
+      console.log('[SupabaseService] Cart cleared for user:', userEmail);
+      return { error: null };
+    } catch (error) {
+      console.error('[SupabaseService] Exception clearing cart:', error);
+      return { error };
+    }
   }
 }

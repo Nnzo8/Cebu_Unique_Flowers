@@ -1,7 +1,8 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject, signal, computed } from '@angular/core';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
+import { RouterModule, Router } from '@angular/router';
+import { AuthService } from '../../../core/services/auth.service';
 
 @Component({
   selector: 'app-register',
@@ -11,10 +12,16 @@ import { RouterModule } from '@angular/router';
   styleUrl: './register.css'
 })
 export class RegisterComponent implements OnInit {
-  registerForm!: FormGroup;
-  submitted = false;
+  private formBuilder = inject(FormBuilder);
+  private authService = inject(AuthService);
+  private router = inject(Router);
 
-  constructor(private formBuilder: FormBuilder) {}
+  registerForm!: FormGroup;
+  submitted = signal(false);
+  isLoading = signal(false);
+  errorMessage = signal<string | null>(null);
+  showConfirmationMessage = signal(false);
+  registeredEmail = signal<string | null>(null);
 
   ngOnInit(): void {
     this.initializeForm();
@@ -32,17 +39,87 @@ export class RegisterComponent implements OnInit {
   }
 
   /**
-   * Handle form submission. Logs form value to console as a placeholder for Firebase Auth.
+   * Handle form submission with Supabase email verification.
+   * Flow:
+   * 1. Validate form
+   * 2. Send registration to Supabase with email confirmation
+   * 3. Show confirmation message asking user to check email
+   * 4. Once email is validated, user is officially registered
    */
-  onSubmit(): void {
-    this.submitted = true;
+  async onSubmit(): Promise<void> {
+    this.submitted.set(true);
+    this.errorMessage.set(null);
 
     if (this.registerForm.invalid) {
       return;
     }
 
-    // Placeholder: Future Firebase Authentication integration
-    console.log('Register Form Data:', this.registerForm.value);
+    this.isLoading.set(true);
+    // Disable form during submission
+    this.registerForm.disable();
+
+    const { fullName, email, password } = this.registerForm.value;
+
+    try {
+      console.log('[RegisterComponent] Starting registration for:', email);
+      
+      // Call auth service to register user
+      const result = await this.authService.register(
+        email,
+        password,
+        fullName
+      );
+
+      if (result.success) {
+        console.log('[RegisterComponent] Registration successful for:', email);
+        
+        // Show confirmation message instead of immediate redirect
+        this.registeredEmail.set(email);
+        this.showConfirmationMessage.set(true);
+        
+        // Reset form
+        this.registerForm.reset();
+        this.submitted.set(false);
+
+        // Optional: Auto-redirect to login after 10 seconds
+        setTimeout(() => {
+          this.router.navigate(['/auth/login']);
+        }, 10000);
+      } else {
+        console.error('[RegisterComponent] Registration failed:', result.error);
+        // Handle specific Supabase error messages
+        if (result.error?.includes('already registered')) {
+          this.errorMessage.set('This email is already registered. Please log in or use a different email.');
+        } else if (result.error?.includes('password')) {
+          this.errorMessage.set('Password does not meet security requirements. Use at least 8 characters.');
+        } else {
+          this.errorMessage.set(result.error || 'Registration failed. Please try again.');
+        }
+        // Re-enable form on error
+        this.registerForm.enable();
+      }
+    } catch (error: any) {
+      console.error('[RegisterComponent] Registration exception:', error);
+      this.errorMessage.set('An unexpected error occurred. Please try again.');
+      // Re-enable form on error
+      this.registerForm.enable();
+    } finally {
+      this.isLoading.set(false);
+    }
+  }
+
+  /**
+   * Dismiss error message
+   */
+  dismissError(): void {
+    this.errorMessage.set(null);
+  }
+
+  /**
+   * Dismiss confirmation and redirect to login
+   */
+  goToLogin(): void {
+    this.router.navigate(['/auth/login']);
   }
 
   /**

@@ -98,33 +98,69 @@ export class AuthService {
 
   /**
    * Register a new user via Supabase Auth
+   * Flow:
+   * 1. Create auth user (Supabase handles password hashing)
+   * 2. Send email confirmation link to user
+   * 3. Create user record in users table with full_name
+   * 4. Return success/error
    * @param email User email
-   * @param password User password
+   * @param password User password (will be hashed by Supabase)
+   * @param fullName User's full name
    * @param isAdmin Whether the user is an admin (default: false)
    */
-  async register(email: string, password: string, isAdmin: boolean = false): Promise<{ success: boolean; error?: string }> {
+  async register(
+    email: string,
+    password: string,
+    fullName: string,
+    isAdmin: boolean = false
+  ): Promise<{ success: boolean; error?: string }> {
     try {
+      console.log('[AuthService] Starting registration for:', email);
       const role = isAdmin ? 'admin' : 'user';
+
+      // Step 1: Create auth user with Supabase
+      // Supabase will automatically hash the password server-side
       const { user, error } = await this.supabaseService.signUp(email, password, role);
 
       if (error) {
-        console.error('Registration error:', error);
-        return { success: false, error: error.message };
+        console.error('[AuthService] Sign up error:', error);
+        return { success: false, error: error.message || 'Registration failed' };
       }
 
-      if (user) {
-        this.currentUser.set({
-          email: user.email,
-          role: role,
-        });
-        this.isLoggedIn.set(true);
-        return { success: true };
+      if (!user) {
+        console.error('[AuthService] No user returned from sign up');
+        return { success: false, error: 'Registration failed' };
       }
 
-      return { success: false, error: 'Registration failed' };
+      console.log('[AuthService] Auth user created successfully:', user.email);
+
+      // Step 2: Create user record in users table
+      try {
+        const createResult = await this.supabaseService.createUserRecord(user.id, email, fullName, role);
+        
+        if (createResult.error) {
+          console.error('[AuthService] Error creating user record:', createResult.error);
+          // Non-fatal error - user is still registered, just log it
+          console.log('[AuthService] Continuing despite user record creation error');
+        } else {
+          console.log('[AuthService] User record created successfully in users table');
+        }
+      } catch (error) {
+        console.error('[AuthService] Exception creating user record:', error);
+        // Non-fatal error - continue
+      }
+
+      // Step 3: Set local state (user won't be fully logged in until email is verified)
+      this.currentUser.set({
+        email: user.email,
+        role: role,
+      });
+
+      console.log('[AuthService] Registration successful. Confirmation email sent to:', email);
+      return { success: true };
     } catch (error: any) {
-      console.error('Registration exception:', error);
-      return { success: false, error: error.message };
+      console.error('[AuthService] Registration exception:', error);
+      return { success: false, error: error.message || 'An unexpected error occurred' };
     }
   }
 

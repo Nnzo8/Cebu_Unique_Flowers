@@ -28,6 +28,12 @@ export class Inventory {
   // State: Loading state
   readonly isLoading = signal(false);
 
+  // State: Drag-and-drop active state
+  readonly isDragActive = signal(false);
+
+  // State: Image preview URL (for both URL and file uploads)
+  readonly imagePreviewUrl = signal<string | null>(null);
+
   // Form
   productForm: FormGroup;
 
@@ -53,7 +59,7 @@ export class Inventory {
       category: ['', Validators.required],
       price: ['', [Validators.required, Validators.min(0)]],
       description: ['', [Validators.required, Validators.minLength(10)]],
-      imageUrl: ['', [Validators.required, Validators.pattern(/^https?:\/\/.+/)]],
+      imageUrl: ['', Validators.required],
     });
   }
 
@@ -80,6 +86,7 @@ export class Inventory {
   openCreateForm(): void {
     this.selectedProduct.set(null);
     this.productForm.reset();
+    this.imagePreviewUrl.set(null);
     this.isFormOpen.set(true);
   }
 
@@ -95,6 +102,7 @@ export class Inventory {
       description: product.description,
       imageUrl: product.imageUrl,
     });
+    this.imagePreviewUrl.set(product.imageUrl);
     this.isFormOpen.set(true);
   }
 
@@ -105,6 +113,89 @@ export class Inventory {
     this.isFormOpen.set(false);
     this.selectedProduct.set(null);
     this.productForm.reset();
+    this.imagePreviewUrl.set(null);
+    this.isDragActive.set(false);
+  }
+
+  /**
+   * Handle drag over event
+   */
+  onDragOver(event: DragEvent): void {
+    event.preventDefault();
+    event.stopPropagation();
+    this.isDragActive.set(true);
+  }
+
+  /**
+   * Handle drag leave event
+   */
+  onDragLeave(event: DragEvent): void {
+    event.preventDefault();
+    event.stopPropagation();
+    this.isDragActive.set(false);
+  }
+
+  /**
+   * Handle dropped files
+   */
+  onDrop(event: DragEvent): void {
+    event.preventDefault();
+    event.stopPropagation();
+    this.isDragActive.set(false);
+
+    const files = event.dataTransfer?.files;
+    if (files && files.length > 0) {
+      this.processImageFile(files[0]);
+    }
+  }
+
+  /**
+   * Handle file input change
+   */
+  onFileSelected(event: Event): void {
+    const target = event.target as HTMLInputElement;
+    const files = target.files;
+    if (files && files.length > 0) {
+      this.processImageFile(files[0]);
+    }
+  }
+
+  /**
+   * Process image file and convert to data URL or handle file path
+   */
+  private processImageFile(file: File): void {
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      alert('Please select a valid image file');
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      alert('File size must be less than 5MB');
+      return;
+    }
+
+    // Convert file to data URL for preview
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const dataUrl = e.target?.result as string;
+      this.imagePreviewUrl.set(dataUrl);
+      // Update form with the data URL
+      this.productForm.patchValue({
+        imageUrl: dataUrl,
+      });
+    };
+    reader.readAsDataURL(file);
+  }
+
+  /**
+   * Handle image URL input change
+   */
+  onImageUrlChange(url: string): void {
+    if (url) {
+      this.imagePreviewUrl.set(url);
+    }
   }
 
   /**

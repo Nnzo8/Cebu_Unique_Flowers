@@ -14,7 +14,7 @@
 
     <!-- Stats Cards Grid -->
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-      @for (stat of statsCards; track stat.title) {
+      @for (stat of statsCards(); track stat.title) {
         <div class="bg-white rounded-lg border border-slate-200 p-6 hover:shadow-md transition-shadow duration-300">
           <div class="flex items-baseline justify-between mb-4">
             <h3 class="text-sm font-medium text-slate-600">{{ stat.title }}</h3>
@@ -35,7 +35,7 @@
     <!-- Recent Orders Table -->
     <div class="bg-white rounded-lg border border-slate-200 overflow-hidden hover:shadow-md transition-shadow duration-300">
       <div class="px-6 py-4 border-b border-slate-200">
-        <h3 class="text-lg font-semibold text-slate-800">Recent Orders</h3>
+        <h3 class="text-lg font-semibold text-slate-800">Recent Orders (Last 3 Days)</h3>
       </div>
 
       <!-- Table -->
@@ -61,11 +61,11 @@
             </tr>
           </thead>
           <tbody>
-            @for (order of recentOrders; track order.id) {
+            @for (order of recentOrders(); track order.id) {
               <tr class="border-b border-slate-200 hover:bg-slate-50 transition-colors">
-                <td class="px-6 py-4 text-sm font-medium text-slate-900">{{ order.id }}</td>
-                <td class="px-6 py-4 text-sm text-slate-700">{{ order.customer }}</td>
-                <td class="px-6 py-4 text-sm font-semibold text-slate-900">${{ order.amount.toFixed(2) }}</td>
+                <td class="px-6 py-4 text-sm font-medium text-slate-900">{{ order.id.substring(0, 8) }}</td>
+                <td class="px-6 py-4 text-sm text-slate-700">{{ order.customer_name }}</td>
+                <td class="px-6 py-4 text-sm font-semibold text-slate-900">₱{{ order.total_price.toFixed(2) }}</td>
                 <td class="px-6 py-4 text-sm">
                   <span
                     class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium"
@@ -74,7 +74,7 @@
                     {{ getStatusLabel(order.status) }}
                   </span>
                 </td>
-                <td class="px-6 py-4 text-sm text-slate-600">{{ order.date }}</td>
+                <td class="px-6 py-4 text-sm text-slate-600">{{ formatDate(order.order_date) }}</td>
               </tr>
             } @empty {
               <tr>
