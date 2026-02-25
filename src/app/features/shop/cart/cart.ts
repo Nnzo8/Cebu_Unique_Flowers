@@ -36,6 +36,10 @@ export class Cart implements OnInit {
   readonly pastOrders = signal<Order[]>([]);
   readonly ordersLoading = signal(false);
 
+  // ====== MODAL STATE ======
+  readonly showOrderModal = signal(false);
+  readonly selectedOrder = signal<Order | null>(null);
+
   constructor() {}
 
   ngOnInit(): void {
@@ -199,4 +203,21 @@ export class Cart implements OnInit {
       day: 'numeric',
     });
   }
-}
+
+  /**
+   * Open order modal with order details
+   */
+  selectOrder(order: Order): void {
+    this.selectedOrder.set(order);
+    this.showOrderModal.set(true);
+  }
+
+  /**
+   * Close order modal
+   */
+  closeOrderModal(): void {
+    this.showOrderModal.set(false);
+    setTimeout(() => {
+      this.selectedOrder.set(null);
+    }, 300);
+  }}

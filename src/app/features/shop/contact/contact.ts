@@ -27,13 +27,13 @@ export class Contact {
     {
       icon: 'email',
       label: 'Email',
-      url: 'mailto:contact@example.com',
+      url: 'ninorollaneocliasa684@gmail.com',
       ariaLabel: 'Send an email',
     },
     {
       icon: 'facebook',
       label: 'Facebook',
-      url: 'https://facebook.com',
+      url: 'https://www.facebook.com/share/1C36wmjsrH/',
       ariaLabel: 'Visit Facebook profile',
     },
     {
@@ -45,7 +45,7 @@ export class Contact {
     {
       icon: 'instagram',
       label: 'Instagram',
-      url: 'https://instagram.com',
+      url: 'https://www.instagram.com/cebuunigueflowers?igsh=dTVjeDVtNG02bGlu',
       ariaLabel: 'Visit Instagram profile',
     },
   ];

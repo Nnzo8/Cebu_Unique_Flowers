@@ -3,12 +3,13 @@ import { CommonModule, CurrencyPipe } from '@angular/common';
 import { SupabaseService, Product } from '../../../core/services/supabase.service';
 import { CartService } from '../../../core/services/cart.service';
 import { NavbarComponent } from '../../../shared/components/navbar.component/navbar.component';
+import { FormsModule } from '@angular/forms';
 
 type CategoryType = 'All' | 'Anniversary' | 'Birthdays' | 'Sympathy' | 'Weddings';
 
 @Component({
   selector: 'app-catalog',
-  imports: [CommonModule, NavbarComponent, CurrencyPipe],
+  imports: [CommonModule, NavbarComponent, CurrencyPipe, FormsModule],
   templateUrl: './catalog.html',
   styleUrl: './catalog.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -29,6 +30,9 @@ export class Catalog implements OnInit {
   // State: Selected category filter
   readonly selectedCategory = signal<CategoryType>('All');
 
+  // State: Search query
+  readonly searchQuery = signal<string>('');
+
   // NEW: State for Toast Notification
   readonly showToast = signal(false);
   private toastTimeout: any;
@@ -36,8 +40,8 @@ export class Catalog implements OnInit {
   // Category options
   readonly categories: CategoryType[] = ['All', 'Anniversary', 'Birthdays', 'Sympathy', 'Weddings'];
 
-  // Computed: Filtered products based on selected category
-  readonly filteredProducts = computed(() => {
+  // Computed: Filter by category first
+  readonly filteredByCategory = computed(() => {
     const selected = this.selectedCategory();
     if (selected === 'All') {
       return this.products();
@@ -45,10 +49,19 @@ export class Catalog implements OnInit {
     return this.products().filter((product) => product.category === selected);
   });
 
-  // NEW: Computed property to grab the top 4 products for the Best Sellers section
-  readonly bestSellers = computed(() => {
-    const allProducts = this.products();
-    return allProducts.slice(0, 4); // Grabs the first 4 items
+  // Computed: Filter by category AND search query
+  readonly filteredProducts = computed(() => {
+    const search = this.searchQuery().toLowerCase().trim();
+    const categoryFiltered = this.filteredByCategory();
+    
+    if (!search) {
+      return categoryFiltered;
+    }
+    
+    return categoryFiltered.filter((product) => 
+      product.name.toLowerCase().includes(search) ||
+      (product.description?.toLowerCase().includes(search) ?? false)
+    );
   });
 
   constructor() {
@@ -95,6 +108,20 @@ export class Catalog implements OnInit {
    */
   selectCategory(category: CategoryType): void {
     this.selectedCategory.set(category);
+  }
+
+  /**
+   * Update search query
+   */
+  updateSearch(query: string): void {
+    this.searchQuery.set(query);
+  }
+
+  /**
+   * Clear search query
+   */
+  clearSearch(): void {
+    this.searchQuery.set('');
   }
 
   /**

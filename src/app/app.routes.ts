@@ -15,7 +15,7 @@ export const routes: Routes = [
   },
   { 
     path: '', 
-    loadComponent: () => import('./features/shop/catalog/catalog').then(m => m.Catalog) 
+    loadComponent: () => import('./features/shop/home/home').then(m => m.Home) 
   },
-  { path: '**', redirectTo: '' }
+  { path: '**', redirectTo: '' } //wildcard route to catch undefined paths and redirect to home
 ];
