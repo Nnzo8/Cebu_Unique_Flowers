@@ -1,22 +1,21 @@
 import { Routes } from '@angular/router';
-import { Catalog } from './features/shop/catalog/catalog';
-import { authRoutes } from './features/auth/auth.routes';
-import { adminRoutes } from './features/admin/admin.routes';
-import { shopRoutes } from './features/shop/shop.routes';
 
 export const routes: Routes = [
   {
-    path: 'auth',
-    children: authRoutes
+  path: 'auth',
+  loadChildren: () => import('./features/auth/auth.routes').then(m => m.authRoutes)
   },
   {
     path: 'admin',
-    children: adminRoutes
+    loadChildren: () => import('./features/admin/admin.routes').then(m => m.adminRoutes)
   },
   {
     path: 'shop',
-    children: shopRoutes
+    loadChildren: () => import('./features/shop/shop.routes').then(m => m.shopRoutes)
   },
-  { path: '', component: Catalog },
+  { 
+    path: '', 
+    loadComponent: () => import('./features/shop/catalog/catalog').then(m => m.Catalog) 
+  },
   { path: '**', redirectTo: '' }
 ];

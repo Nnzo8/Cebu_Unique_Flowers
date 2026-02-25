@@ -1,9 +1,8 @@
 import { ApplicationConfig, provideBrowserGlobalErrorListeners, APP_INITIALIZER } from '@angular/core';
-import { provideRouter } from '@angular/router';
+import { provideRouter,withPreloading, PreloadAllModules } from '@angular/router';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { authInterceptor } from './core/interceptors/auth.interceptor';
 import { SupabaseService } from './core/services/supabase.service';
-
 import { routes } from './app.routes';
 
 /**
@@ -17,6 +16,8 @@ export function initializeSupabaseSession(supabaseService: SupabaseService): () 
 // Application-wide configuration including HTTP setup and routing
 export const appConfig: ApplicationConfig = {
   providers: [
+
+    provideRouter(routes, withPreloading(PreloadAllModules)),
     // Enable browser global error listeners for debugging
     provideBrowserGlobalErrorListeners(),
     
